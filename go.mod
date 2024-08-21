@@ -1,6 +1,6 @@
 module github.com/aptos-labs/aptos-go-sdk
 
-go 1.22
+go 1.21
 
 require (
 	github.com/cucumber/godog v0.14.1

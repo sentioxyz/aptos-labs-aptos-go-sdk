@@ -114,7 +114,7 @@ func (sf *EntryFunction) UnmarshalBCS(des *bcs.Deserializer) {
 	sf.ArgTypes = bcs.DeserializeSequence[TypeTag](des)
 	alen := des.Uleb128()
 	sf.Args = make([][]byte, alen)
-	for i := range alen {
+	for i := uint32(0); i <= alen; i++  {
 		sf.Args[i] = des.ReadBytes()
 	}
 }
