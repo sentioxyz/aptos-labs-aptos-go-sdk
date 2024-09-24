@@ -318,7 +318,9 @@ type UserTransaction struct {
 	GasUnitPrice            uint64                // GasUnitPrice of the transaction, this is the multiplier per unit of gas to tokens.
 	ExpirationTimestampSecs uint64                // ExpirationTimestampSecs of the transaction, this is the Unix timestamp in seconds when the transaction expires.
 	Payload                 *TransactionPayload   // Payload of the transaction, this is the actual transaction data.
+	RawPayload              json.RawMessage       // PayloadRaw is the raw JSON of the payload.
 	Signature               *Signature            // Signature is the AccountAuthenticator of the sender.
+	RawSignature            json.RawMessage       // SignatureRaw is the raw JSON of the signature.
 	Timestamp               uint64                // Timestamp is the Unix timestamp in microseconds when the block of the transaction was committed.
 	StateCheckpointHash     Hash                  // StateCheckpointHash of the transaction. Optional, and will be "" if not set.
 }
@@ -356,8 +358,8 @@ func (o *UserTransaction) UnmarshalJSON(b []byte) error {
 		MaxGasAmount            U64                   `json:"max_gas_amount"`
 		GasUnitPrice            U64                   `json:"gas_unit_price"`
 		ExpirationTimestampSecs U64                   `json:"expiration_timestamp_secs"`
-		Payload                 *TransactionPayload   `json:"payload"`
-		Signature               *Signature            `json:"signature"`
+		RawPayload              json.RawMessage       `json:"payload"`
+		RawSignature            json.RawMessage       `json:"signature"`
 		Timestamp               U64                   `json:"timestamp"`
 		StateCheckpointHash     Hash                  `json:"state_checkpoint_hash"` // Optional
 	}
@@ -381,8 +383,23 @@ func (o *UserTransaction) UnmarshalJSON(b []byte) error {
 	o.MaxGasAmount = data.MaxGasAmount.ToUint64()
 	o.GasUnitPrice = data.GasUnitPrice.ToUint64()
 	o.ExpirationTimestampSecs = data.ExpirationTimestampSecs.ToUint64()
-	o.Payload = data.Payload
-	o.Signature = data.Signature
+
+	if len(data.RawPayload) > 0 {
+		o.Payload = &TransactionPayload{}
+		err = json.Unmarshal(data.RawPayload, o.Payload)
+		if err != nil {
+			return err
+		}
+	}
+
+	if len(data.RawSignature) > 0 {
+		o.Signature = &Signature{}
+		err = json.Unmarshal(data.RawSignature, o.Signature)
+		if err != nil {
+			return err
+		}
+	}
+
 	o.Timestamp = data.Timestamp.ToUint64()
 	o.StateCheckpointHash = data.StateCheckpointHash
 	return nil
