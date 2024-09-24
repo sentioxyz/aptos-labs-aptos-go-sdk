@@ -474,6 +474,7 @@ type GenesisTransaction struct {
 	Changes             []*WriteSetChange   // Changes to the ledger from the transaction, should never be empty.
 	Events              []*Event            // Events emitted by the transaction, may be empty.
 	Payload             *TransactionPayload // Payload of the transaction, this is the actual transaction data.
+	RawPayload          json.RawMessage     // PayloadRaw is the raw JSON of the payload.
 	StateCheckpointHash Hash                // StateCheckpointHash of the transaction. Optional, and will be "" if not set.
 }
 
@@ -495,18 +496,18 @@ func (o *GenesisTransaction) TxnVersion() *uint64 {
 // UnmarshalJSON unmarshals the [GenesisTransaction] from JSON handling conversion between types
 func (o *GenesisTransaction) UnmarshalJSON(b []byte) error {
 	type inner struct {
-		Version             U64                 `json:"version"`
-		Hash                Hash                `json:"hash"`
-		AccumulatorRootHash Hash                `json:"accumulator_root_hash"`
-		StateChangeHash     Hash                `json:"state_change_hash"`
-		EventRootHash       Hash                `json:"event_root_hash"`
-		GasUsed             U64                 `json:"gas_used"`
-		Success             bool                `json:"success"`
-		VmStatus            string              `json:"vm_status"`
-		Changes             []*WriteSetChange   `json:"changes"`
-		Events              []*Event            `json:"events"`
-		Payload             *TransactionPayload `json:"payload"`
-		StateCheckpointHash Hash                `json:"state_checkpoint_hash"` // Optional
+		Version             U64               `json:"version"`
+		Hash                Hash              `json:"hash"`
+		AccumulatorRootHash Hash              `json:"accumulator_root_hash"`
+		StateChangeHash     Hash              `json:"state_change_hash"`
+		EventRootHash       Hash              `json:"event_root_hash"`
+		GasUsed             U64               `json:"gas_used"`
+		Success             bool              `json:"success"`
+		VmStatus            string            `json:"vm_status"`
+		Changes             []*WriteSetChange `json:"changes"`
+		Events              []*Event          `json:"events"`
+		RawPayload          json.RawMessage   `json:"payload"`
+		StateCheckpointHash Hash              `json:"state_checkpoint_hash"` // Optional
 	}
 	data := &inner{}
 	err := json.Unmarshal(b, &data)
@@ -523,7 +524,14 @@ func (o *GenesisTransaction) UnmarshalJSON(b []byte) error {
 	o.VmStatus = data.VmStatus
 	o.Changes = data.Changes
 	o.Events = data.Events
-	o.Payload = data.Payload
+	if len(data.RawPayload) > 0 {
+		o.Payload = &TransactionPayload{}
+		err = json.Unmarshal(data.RawPayload, o.Payload)
+		if err != nil {
+			return err
+		}
+	}
+
 	o.StateCheckpointHash = data.StateCheckpointHash
 	return nil
 }
