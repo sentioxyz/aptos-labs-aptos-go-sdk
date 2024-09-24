@@ -383,7 +383,8 @@ func (o *UserTransaction) UnmarshalJSON(b []byte) error {
 	o.MaxGasAmount = data.MaxGasAmount.ToUint64()
 	o.GasUnitPrice = data.GasUnitPrice.ToUint64()
 	o.ExpirationTimestampSecs = data.ExpirationTimestampSecs.ToUint64()
-
+	o.RawPayload = data.RawPayload
+	o.RawSignature = data.RawSignature
 	if len(data.RawPayload) > 0 {
 		o.Payload = &TransactionPayload{}
 		err = json.Unmarshal(data.RawPayload, o.Payload)
@@ -525,6 +526,7 @@ func (o *GenesisTransaction) UnmarshalJSON(b []byte) error {
 	o.Changes = data.Changes
 	o.Events = data.Events
 	if len(data.RawPayload) > 0 {
+		o.RawPayload = data.RawPayload
 		o.Payload = &TransactionPayload{}
 		err = json.Unmarshal(data.RawPayload, o.Payload)
 		if err != nil {
