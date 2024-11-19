@@ -39,6 +39,11 @@ func TestAccountAuthenticator_Ed25519(t *testing.T) {
 	err = expectedSignature.FromHex("0x0ba0310b8dad7053259b956f088779a59dc4a913e997678b4c8fb2da9a9d13d39736ad3a713ca300e7c8fcc98e483d829a8ddcf99df873038e3558ee982f6609")
 	assert.NoError(t, err)
 	assert.Equal(t, expectedSignature, *auth.Sig)
+
+	// test marshal
+	marshaled, err := json.Marshal(data)
+	assert.NoError(t, err)
+	assert.JSONEq(t, testJson, string(marshaled))
 }
 
 func TestAccountAuthenticator_FeePayer(t *testing.T) {
@@ -65,4 +70,9 @@ func TestAccountAuthenticator_FeePayer(t *testing.T) {
 
 	// TODO: verify some parsing
 	// auth := data.Inner.(*FeePayerSignature)
+
+	// test marshal
+	marshaled, err := json.Marshal(data)
+	assert.NoError(t, err)
+	assert.JSONEq(t, testJson, string(marshaled))
 }

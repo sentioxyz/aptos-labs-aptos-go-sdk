@@ -56,6 +56,58 @@ func (o *TransactionPayload) UnmarshalJSON(b []byte) error {
 	return json.Unmarshal(b, o.Inner)
 }
 
+func (o *TransactionPayload) MarshalJSON() ([]byte, error) {
+	switch o.Type {
+	case TransactionPayloadVariantEntryFunction:
+		inner := struct {
+			Type string `json:"type"`
+			*TransactionPayloadEntryFunction
+		}{
+			Type:                            string(o.Type),
+			TransactionPayloadEntryFunction: o.Inner.(*TransactionPayloadEntryFunction),
+		}
+		return json.Marshal(&inner)
+	case TransactionPayloadVariantScript:
+		inner := struct {
+			Type string `json:"type"`
+			*TransactionPayloadScript
+		}{
+			Type:                     string(o.Type),
+			TransactionPayloadScript: o.Inner.(*TransactionPayloadScript),
+		}
+		return json.Marshal(&inner)
+	case TransactionPayloadVariantMultisig:
+		inner := struct {
+			Type string `json:"type"`
+			*TransactionPayloadMultisig
+		}{
+			Type:                       string(o.Type),
+			TransactionPayloadMultisig: o.Inner.(*TransactionPayloadMultisig),
+		}
+		return json.Marshal(&inner)
+	case TransactionPayloadVariantWriteSet:
+		inner := struct {
+			Type string `json:"type"`
+			*TransactionPayloadWriteSet
+		}{
+			Type:                       string(o.Type),
+			TransactionPayloadWriteSet: o.Inner.(*TransactionPayloadWriteSet),
+		}
+		return json.Marshal(&inner)
+	case TransactionPayloadVariantModuleBundle:
+		inner := struct {
+			Type string `json:"type"`
+			*TransactionPayloadModuleBundle
+		}{
+			Type:                           string(o.Type),
+			TransactionPayloadModuleBundle: o.Inner.(*TransactionPayloadModuleBundle),
+		}
+		return json.Marshal(&inner)
+	default:
+		return json.Marshal(o.Inner.(*TransactionPayloadUnknown).Payload)
+	}
+}
+
 // TransactionPayloadImpl is all the interfaces required for all transaction payloads
 //
 // Current implementations are:

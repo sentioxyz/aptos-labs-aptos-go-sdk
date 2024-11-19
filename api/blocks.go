@@ -63,5 +63,26 @@ func (o *Block) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+func (o *Block) MarshalJSON() ([]byte, error) {
+	type inner struct {
+		BlockHash      Hash                    `json:"block_hash"`
+		BlockHeight    U64                     `json:"block_height"`
+		BlockTimestamp U64                     `json:"block_timestamp"`
+		FirstVersion   U64                     `json:"first_version"`
+		LastVersion    U64                     `json:"last_version"`
+		Transactions   []*CommittedTransaction `json:"transactions"`
+	}
+	data := &inner{
+		BlockHash:      o.BlockHash,
+		BlockHeight:    U64(o.BlockHeight),
+		BlockTimestamp: U64(o.BlockTimestamp),
+		FirstVersion:   U64(o.FirstVersion),
+		LastVersion:    U64(o.LastVersion),
+		Transactions:   o.Transactions,
+	}
+
+	return json.Marshal(data)
+}
+
 //endregion
 //endregion

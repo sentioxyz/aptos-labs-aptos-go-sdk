@@ -307,6 +307,11 @@ func TestTransaction_GenesisTransaction(t *testing.T) {
 	assert.Equal(t, *data.Version(), data2.Version())
 	assert.Equal(t, data.Hash(), data2.Hash())
 	assert.Equal(t, *data.Success(), data2.Success())
+
+	// Check MarshalJSON
+	jsonData, err := json.Marshal(data)
+	assert.NoError(t, err)
+	assert.JSONEq(t, testJson, string(jsonData))
 }
 
 func TestTransaction_PendingTransaction(t *testing.T) {
@@ -566,6 +571,11 @@ func TestTransaction_UserTransaction(t *testing.T) {
 	assert.Equal(t, *data.Version(), data2.Version())
 	assert.Equal(t, data.Hash(), data2.Hash())
 	assert.Equal(t, *data.Success(), data2.Success())
+
+	// Check MarshalJSON
+	jsonData, err := json.Marshal(data)
+	assert.NoError(t, err)
+	assert.JSONEq(t, testJson, string(jsonData))
 }
 
 func TestTransaction_BlockMetadataTransaction(t *testing.T) {
@@ -674,6 +684,11 @@ func TestTransaction_BlockMetadataTransaction(t *testing.T) {
 	assert.Equal(t, *data.Version(), data2.Version())
 	assert.Equal(t, data.Hash(), data2.Hash())
 	assert.Equal(t, *data.Success(), data2.Success())
+
+	// Check MarshalJSON
+	jsonData, err := json.Marshal(data)
+	assert.NoError(t, err)
+	assert.JSONEq(t, testJson, string(jsonData))
 }
 
 func TestTransaction_StateCheckpointTransaction(t *testing.T) {
@@ -722,6 +737,11 @@ func TestTransaction_StateCheckpointTransaction(t *testing.T) {
 	assert.Equal(t, *data.Version(), data2.Version())
 	assert.Equal(t, data.Hash(), data2.Hash())
 	assert.Equal(t, *data.Success(), data2.Success())
+
+	// Check MarshalJSON
+	jsonData, err := json.Marshal(data)
+	assert.NoError(t, err)
+	assert.JSONEq(t, testJson, string(jsonData))
 }
 
 func TestTransaction_BlockEpilogueTransaction(t *testing.T) {
@@ -786,6 +806,11 @@ func TestTransaction_BlockEpilogueTransaction(t *testing.T) {
 	assert.Error(t, err)
 	_, err = data2.UnknownTransaction()
 	assert.Error(t, err)
+
+	// Check MarshalJSON
+	jsonData, err := json.Marshal(data)
+	assert.NoError(t, err)
+	assert.JSONEq(t, testJson, string(jsonData))
 }
 
 func TestTransaction_UnknownTransaction(t *testing.T) {
@@ -847,4 +872,9 @@ func TestTransaction_UnknownTransaction(t *testing.T) {
 	assert.Error(t, err)
 	_, err = data2.ValidatorTransaction()
 	assert.Error(t, err)
+
+	// Check MarshalJSON
+	jsonData, err := json.Marshal(data)
+	assert.NoError(t, err)
+	assert.JSONEq(t, testJson, string(jsonData))
 }

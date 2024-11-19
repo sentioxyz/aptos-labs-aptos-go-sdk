@@ -31,6 +31,11 @@ func TestEvent_V1(t *testing.T) {
 	err = addr.ParseStringRelaxed("0x810026ca8291dd88b5b30a1d3ca2edd683d33d06c4a7f7c451d96f6d47bc5e8b")
 	assert.NoError(t, err)
 	assert.Equal(t, addr, data.Guid.AccountAddress)
+
+	// test json marshal
+	b, err := json.Marshal(data)
+	assert.NoError(t, err)
+	assert.JSONEq(t, testJson, string(b))
 }
 
 func TestEvent_V2(t *testing.T) {
@@ -56,4 +61,9 @@ func TestEvent_V2(t *testing.T) {
 	assert.Equal(t, "0x1234123412341234123412341234123412341234123412341234123412341234", data.Data["store"].(string))
 	assert.Equal(t, uint64(0), data.Guid.CreationNumber)
 	assert.Equal(t, &types.AccountZero, data.Guid.AccountAddress)
+
+	// test json marshal
+	b, err := json.Marshal(data)
+	assert.NoError(t, err)
+	assert.JSONEq(t, testJson, string(b))
 }

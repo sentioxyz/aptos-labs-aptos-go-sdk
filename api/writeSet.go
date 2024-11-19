@@ -119,6 +119,46 @@ func (o *WriteSetChange) UnmarshalJSON(b []byte) error {
 	return json.Unmarshal(b, o.Inner)
 }
 
+func (o *WriteSetChange) MarshalJSON() ([]byte, error) {
+	switch o.Type {
+	case WriteSetChangeVariantWriteResource:
+		return json.Marshal(struct {
+			Type string `json:"type"`
+			*WriteSetChangeWriteResource
+		}{string(o.Type), o.Inner.(*WriteSetChangeWriteResource)})
+	case WriteSetChangeVariantDeleteResource:
+		return json.Marshal(struct {
+			Type string `json:"type"`
+			*WriteSetChangeDeleteResource
+		}{string(o.Type), o.Inner.(*WriteSetChangeDeleteResource)})
+	case WriteSetChangeVariantWriteModule:
+		return json.Marshal(struct {
+			Type string `json:"type"`
+			*WriteSetChangeWriteModule
+		}{string(o.Type), o.Inner.(*WriteSetChangeWriteModule)})
+	case WriteSetChangeVariantDeleteModule:
+		return json.Marshal(struct {
+			Type string `json:"type"`
+			*WriteSetChangeDeleteModule
+		}{string(o.Type), o.Inner.(*WriteSetChangeDeleteModule)})
+	case WriteSetChangeVariantWriteTableItem:
+		return json.Marshal(struct {
+			Type string `json:"type"`
+			*WriteSetChangeWriteTableItem
+		}{string(o.Type), o.Inner.(*WriteSetChangeWriteTableItem)})
+	case WriteSetChangeVariantDeleteTableItem:
+		return json.Marshal(struct {
+			Type string `json:"type"`
+			*WriteSetChangeDeleteTableItem
+		}{string(o.Type), o.Inner.(*WriteSetChangeDeleteTableItem)})
+	default:
+		return json.Marshal(struct {
+			Type string `json:"type"`
+			*WriteSetChangeUnknown
+		}{string(o.Type), o.Inner.(*WriteSetChangeUnknown)})
+	}
+}
+
 // WriteSetChangeImpl is an interface for all write set changes
 type WriteSetChangeImpl interface {
 }

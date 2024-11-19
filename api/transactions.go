@@ -78,6 +78,10 @@ func (o *CommittedTransaction) UnmarshalJSON(b []byte) error {
 	return json.Unmarshal(b, o.Inner)
 }
 
+func (o *CommittedTransaction) MarshalJSON() ([]byte, error) {
+	return json.Marshal(o.Inner)
+}
+
 // UserTransaction changes the transaction to a [UserTransaction]; however, it will fail if it's not one.
 func (o *CommittedTransaction) UserTransaction() (*UserTransaction, error) {
 	if o.Type == TransactionVariantUser {
@@ -190,6 +194,10 @@ func (o *Transaction) UnmarshalJSON(b []byte) error {
 	return json.Unmarshal(b, o.Inner)
 }
 
+func (o *Transaction) MarshalJSON() ([]byte, error) {
+	return json.Marshal(o.Inner)
+}
+
 // UserTransaction changes the transaction to a [UserTransaction]; however, it will fail if it's not one.
 func (o *Transaction) UserTransaction() (*UserTransaction, error) {
 	if o.Type == TransactionVariantUser {
@@ -298,6 +306,10 @@ func (u *UnknownTransaction) TxnVersion() *uint64 {
 	}
 }
 
+func (u *UnknownTransaction) MarshalJSON() ([]byte, error) {
+	return json.Marshal(u.Payload)
+}
+
 // UserTransaction is a user submitted transaction as an entry function, script, or more.
 //
 // These transactions are the only transactions submitted by users to the blockchain.
@@ -319,6 +331,7 @@ type UserTransaction struct {
 	ExpirationTimestampSecs uint64                // ExpirationTimestampSecs of the transaction, this is the Unix timestamp in seconds when the transaction expires.
 	Payload                 *TransactionPayload   // Payload of the transaction, this is the actual transaction data.
 	Signature               *Signature            // Signature is the AccountAuthenticator of the sender.
+	RawSignature            json.RawMessage       // SignatureRaw is the raw JSON of the signature.
 	Timestamp               uint64                // Timestamp is the Unix timestamp in microseconds when the block of the transaction was committed.
 	StateCheckpointHash     Hash                  // StateCheckpointHash of the transaction. Optional, and will be "" if not set.
 }
@@ -381,11 +394,60 @@ func (o *UserTransaction) UnmarshalJSON(b []byte) error {
 	o.MaxGasAmount = data.MaxGasAmount.ToUint64()
 	o.GasUnitPrice = data.GasUnitPrice.ToUint64()
 	o.ExpirationTimestampSecs = data.ExpirationTimestampSecs.ToUint64()
-	o.Payload = data.Payload
 	o.Signature = data.Signature
+	o.Payload = data.Payload
 	o.Timestamp = data.Timestamp.ToUint64()
 	o.StateCheckpointHash = data.StateCheckpointHash
 	return nil
+}
+
+func (o *UserTransaction) MarshalJSON() ([]byte, error) {
+	data := struct {
+		Type                    string                `json:"type"`
+		Version                 U64                   `json:"version"`
+		Hash                    Hash                  `json:"hash"`
+		AccumulatorRootHash     Hash                  `json:"accumulator_root_hash"`
+		StateChangeHash         Hash                  `json:"state_change_hash"`
+		EventRootHash           Hash                  `json:"event_root_hash"`
+		GasUsed                 U64                   `json:"gas_used"`
+		Success                 bool                  `json:"success"`
+		VmStatus                string                `json:"vm_status"`
+		Changes                 []*WriteSetChange     `json:"changes"`
+		Events                  []*Event              `json:"events"`
+		Sender                  *types.AccountAddress `json:"sender"`
+		SequenceNumber          U64                   `json:"sequence_number"`
+		MaxGasAmount            U64                   `json:"max_gas_amount"`
+		GasUnitPrice            U64                   `json:"gas_unit_price"`
+		ExpirationTimestampSecs U64                   `json:"expiration_timestamp_secs"`
+		Payload                 *TransactionPayload   `json:"payload"`
+		Signature               *Signature            `json:"signature"`
+		Timestamp               U64                   `json:"timestamp"`
+		StateCheckpointHash     *string               `json:"state_checkpoint_hash"`
+	}{
+		Type:                    string(TransactionVariantUser),
+		Version:                 U64(o.Version),
+		Hash:                    o.Hash,
+		AccumulatorRootHash:     o.AccumulatorRootHash,
+		StateChangeHash:         o.StateChangeHash,
+		EventRootHash:           o.EventRootHash,
+		GasUsed:                 U64(o.GasUsed),
+		Success:                 o.Success,
+		VmStatus:                o.VmStatus,
+		Changes:                 o.Changes,
+		Events:                  o.Events,
+		Sender:                  o.Sender,
+		SequenceNumber:          U64(o.SequenceNumber),
+		MaxGasAmount:            U64(o.MaxGasAmount),
+		GasUnitPrice:            U64(o.GasUnitPrice),
+		ExpirationTimestampSecs: U64(o.ExpirationTimestampSecs),
+		Payload:                 o.Payload,
+		Signature:               o.Signature,
+		Timestamp:               U64(o.Timestamp),
+	}
+	if o.StateCheckpointHash != "" {
+		data.StateCheckpointHash = &o.StateCheckpointHash
+	}
+	return json.Marshal(data)
 }
 
 // PendingTransaction is a transaction that is not yet committed to the blockchain.
@@ -444,6 +506,30 @@ func (o *PendingTransaction) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+func (o *PendingTransaction) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Type                    string                `json:"type"`
+		Hash                    Hash                  `json:"hash"`
+		Sender                  *types.AccountAddress `json:"sender"`
+		SequenceNumber          U64                   `json:"sequence_number"`
+		MaxGasAmount            U64                   `json:"max_gas_amount"`
+		GasUnitPrice            U64                   `json:"gas_unit_price"`
+		ExpirationTimestampSecs U64                   `json:"expiration_timestamp_secs"`
+		Payload                 *TransactionPayload   `json:"payload"`
+		Signature               *Signature            `json:"signature"`
+	}{
+		Type:                    string(TransactionVariantPending),
+		Hash:                    o.Hash,
+		Sender:                  o.Sender,
+		SequenceNumber:          U64(o.SequenceNumber),
+		MaxGasAmount:            U64(o.MaxGasAmount),
+		GasUnitPrice:            U64(o.GasUnitPrice),
+		ExpirationTimestampSecs: U64(o.ExpirationTimestampSecs),
+		Payload:                 o.Payload,
+		Signature:               o.Signature,
+	})
+}
+
 // GenesisTransaction is a transaction that is the first transaction on the blockchain.
 type GenesisTransaction struct {
 	Version             uint64              // Version of the transaction, starts at 0 and increments per transaction.
@@ -457,6 +543,7 @@ type GenesisTransaction struct {
 	Changes             []*WriteSetChange   // Changes to the ledger from the transaction, should never be empty.
 	Events              []*Event            // Events emitted by the transaction, may be empty.
 	Payload             *TransactionPayload // Payload of the transaction, this is the actual transaction data.
+	RawPayload          json.RawMessage     // PayloadRaw is the raw JSON of the payload.
 	StateCheckpointHash Hash                // StateCheckpointHash of the transaction. Optional, and will be "" if not set.
 }
 
@@ -478,18 +565,18 @@ func (o *GenesisTransaction) TxnVersion() *uint64 {
 // UnmarshalJSON unmarshals the [GenesisTransaction] from JSON handling conversion between types
 func (o *GenesisTransaction) UnmarshalJSON(b []byte) error {
 	type inner struct {
-		Version             U64                 `json:"version"`
-		Hash                Hash                `json:"hash"`
-		AccumulatorRootHash Hash                `json:"accumulator_root_hash"`
-		StateChangeHash     Hash                `json:"state_change_hash"`
-		EventRootHash       Hash                `json:"event_root_hash"`
-		GasUsed             U64                 `json:"gas_used"`
-		Success             bool                `json:"success"`
-		VmStatus            string              `json:"vm_status"`
-		Changes             []*WriteSetChange   `json:"changes"`
-		Events              []*Event            `json:"events"`
-		Payload             *TransactionPayload `json:"payload"`
-		StateCheckpointHash Hash                `json:"state_checkpoint_hash"` // Optional
+		Version             U64               `json:"version"`
+		Hash                Hash              `json:"hash"`
+		AccumulatorRootHash Hash              `json:"accumulator_root_hash"`
+		StateChangeHash     Hash              `json:"state_change_hash"`
+		EventRootHash       Hash              `json:"event_root_hash"`
+		GasUsed             U64               `json:"gas_used"`
+		Success             bool              `json:"success"`
+		VmStatus            string            `json:"vm_status"`
+		Changes             []*WriteSetChange `json:"changes"`
+		Events              []*Event          `json:"events"`
+		RawPayload          json.RawMessage   `json:"payload"`
+		StateCheckpointHash Hash              `json:"state_checkpoint_hash"` // Optional
 	}
 	data := &inner{}
 	err := json.Unmarshal(b, &data)
@@ -506,9 +593,53 @@ func (o *GenesisTransaction) UnmarshalJSON(b []byte) error {
 	o.VmStatus = data.VmStatus
 	o.Changes = data.Changes
 	o.Events = data.Events
-	o.Payload = data.Payload
+	if len(data.RawPayload) > 0 {
+		o.RawPayload = data.RawPayload
+		o.Payload = &TransactionPayload{}
+		err = json.Unmarshal(data.RawPayload, o.Payload)
+		if err != nil {
+			return err
+		}
+	}
+
 	o.StateCheckpointHash = data.StateCheckpointHash
 	return nil
+}
+
+// MarshalJSON marshals the [GenesisTransaction] into JSON
+func (o *GenesisTransaction) MarshalJSON() ([]byte, error) {
+	data := struct {
+		Type                string            `json:"type"`
+		Version             U64               `json:"version"`
+		Hash                Hash              `json:"hash"`
+		AccumulatorRootHash Hash              `json:"accumulator_root_hash"`
+		StateChangeHash     Hash              `json:"state_change_hash"`
+		EventRootHash       Hash              `json:"event_root_hash"`
+		GasUsed             U64               `json:"gas_used"`
+		Success             bool              `json:"success"`
+		VmStatus            string            `json:"vm_status"`
+		Changes             []*WriteSetChange `json:"changes"`
+		Events              []*Event          `json:"events"`
+		RawPayload          json.RawMessage   `json:"payload"`
+		StateCheckpointHash *string           `json:"state_checkpoint_hash"`
+	}{
+		Type:                string(TransactionVariantGenesis),
+		Version:             U64(o.Version),
+		Hash:                o.Hash,
+		AccumulatorRootHash: o.AccumulatorRootHash,
+		StateChangeHash:     o.StateChangeHash,
+		EventRootHash:       o.EventRootHash,
+		GasUsed:             U64(o.GasUsed),
+		Success:             o.Success,
+		VmStatus:            o.VmStatus,
+		Changes:             o.Changes,
+		Events:              o.Events,
+		RawPayload:          o.RawPayload,
+	}
+	if o.StateCheckpointHash != "" {
+		data.StateCheckpointHash = &o.StateCheckpointHash
+	}
+	return json.Marshal(data)
 }
 
 // BlockMetadataTransaction is a transaction that is metadata about a block.
@@ -597,6 +728,57 @@ func (o *BlockMetadataTransaction) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// MarshalJSON marshals the [BlockMetadataTransaction] into JSON
+func (o *BlockMetadataTransaction) MarshalJSON() ([]byte, error) {
+	type inner struct {
+		Id                       string                `json:"id"`
+		Epoch                    U64                   `json:"epoch"`
+		Round                    U64                   `json:"round"`
+		PreviousBlockVotesBitvec []int8                `json:"previous_block_votes_bitvec"` // TODO: this had to be float64 earlier
+		Proposer                 *types.AccountAddress `json:"proposer"`
+		FailedProposerIndices    []uint32              `json:"failed_proposer_indices"` // TODO: verify
+		Version                  U64                   `json:"version"`
+		Hash                     Hash                  `json:"hash"`
+		AccumulatorRootHash      Hash                  `json:"accumulator_root_hash"`
+		StateChangeHash          Hash                  `json:"state_change_hash"`
+		EventRootHash            Hash                  `json:"event_root_hash"`
+		GasUsed                  U64                   `json:"gas_used"`
+		Success                  bool                  `json:"success"`
+		VmStatus                 string                `json:"vm_status"`
+		Changes                  []*WriteSetChange     `json:"changes"`
+		Events                   []*Event              `json:"events"`
+		Timestamp                U64                   `json:"timestamp"`
+		StateCheckpointHash      *Hash                 `json:"state_checkpoint_hash"`
+		Type                     string                `json:"type"`
+	}
+	data := &inner{
+		Id:                    o.Id,
+		Epoch:                 U64(o.Epoch),
+		Round:                 U64(o.Round),
+		Proposer:              o.Proposer,
+		FailedProposerIndices: o.FailedProposerIndices,
+		Version:               U64(o.Version),
+		Hash:                  o.Hash,
+		AccumulatorRootHash:   o.AccumulatorRootHash,
+		StateChangeHash:       o.StateChangeHash,
+		EventRootHash:         o.EventRootHash,
+		GasUsed:               U64(o.GasUsed),
+		Success:               o.Success,
+		VmStatus:              o.VmStatus,
+		Changes:               o.Changes,
+		Events:                o.Events,
+		Timestamp:             U64(o.Timestamp),
+		Type:                  string(TransactionVariantBlockMetadata),
+	}
+	if o.StateCheckpointHash != "" {
+		data.StateCheckpointHash = &o.StateCheckpointHash
+	}
+	for _, b := range o.PreviousBlockVotesBitvec {
+		data.PreviousBlockVotesBitvec = append(data.PreviousBlockVotesBitvec, int8(b))
+	}
+	return json.Marshal(data)
+}
+
 // BlockEpilogueTransaction is a transaction at the end of the block.  It is not necessarily at the end of a block prior to being enabled as a feature.
 type BlockEpilogueTransaction struct {
 	Version             uint64            // Version of the transaction, starts at 0 and increments per transaction.
@@ -666,6 +848,43 @@ func (o *BlockEpilogueTransaction) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// MarshalJSON marshals the [BlockEpilogueTransaction] into JSON
+func (o *BlockEpilogueTransaction) MarshalJSON() ([]byte, error) {
+	type inner struct {
+		Version             U64               `json:"version"`
+		Hash                Hash              `json:"hash"`
+		AccumulatorRootHash Hash              `json:"accumulator_root_hash"`
+		StateChangeHash     Hash              `json:"state_change_hash"`
+		EventRootHash       Hash              `json:"event_root_hash"`
+		GasUsed             U64               `json:"gas_used"`
+		Success             bool              `json:"success"`
+		VmStatus            string            `json:"vm_status"`
+		Changes             []*WriteSetChange `json:"changes"`
+		Timestamp           U64               `json:"timestamp"`
+		BlockEndInfo        *BlockEndInfo     `json:"block_end_info"`
+		StateCheckpointHash Hash              `json:"state_checkpoint_hash"`
+		Type                string            `json:"type"`
+	}
+	data := &inner{
+		Version:             U64(o.Version),
+		Hash:                o.Hash,
+		AccumulatorRootHash: o.AccumulatorRootHash,
+		StateChangeHash:     o.StateChangeHash,
+		EventRootHash:       o.EventRootHash,
+		GasUsed:             U64(o.GasUsed),
+		Success:             o.Success,
+		VmStatus:            o.VmStatus,
+		Changes:             o.Changes,
+		Timestamp:           U64(o.Timestamp),
+		BlockEndInfo:        o.BlockEndInfo,
+		Type:                string(TransactionVariantBlockEpilogue),
+	}
+	if o.StateCheckpointHash != "" {
+		data.StateCheckpointHash = o.StateCheckpointHash
+	}
+	return json.Marshal(data)
+}
+
 // StateCheckpointTransaction is a transaction that is a checkpoint of the state of the blockchain.  It is not necessarily at the end of a block.
 type StateCheckpointTransaction struct {
 	Version             uint64            // Version of the transaction, starts at 0 and increments per transaction.
@@ -729,6 +948,41 @@ func (o *StateCheckpointTransaction) UnmarshalJSON(b []byte) error {
 	o.Timestamp = data.Timestamp.ToUint64()
 	o.StateCheckpointHash = data.StateCheckpointHash
 	return nil
+}
+
+// MarshalJSON marshals the [StateCheckpointTransaction] into JSON
+func (o *StateCheckpointTransaction) MarshalJSON() ([]byte, error) {
+	type inner struct {
+		Version             U64               `json:"version"`
+		Hash                Hash              `json:"hash"`
+		AccumulatorRootHash Hash              `json:"accumulator_root_hash"`
+		StateChangeHash     Hash              `json:"state_change_hash"`
+		EventRootHash       Hash              `json:"event_root_hash"`
+		GasUsed             U64               `json:"gas_used"`
+		Success             bool              `json:"success"`
+		VmStatus            string            `json:"vm_status"`
+		Changes             []*WriteSetChange `json:"changes"`
+		Timestamp           U64               `json:"timestamp"`
+		StateCheckpointHash *Hash             `json:"state_checkpoint_hash"`
+		Type                string            `json:"type"`
+	}
+	data := &inner{
+		Version:             U64(o.Version),
+		Hash:                o.Hash,
+		AccumulatorRootHash: o.AccumulatorRootHash,
+		StateChangeHash:     o.StateChangeHash,
+		EventRootHash:       o.EventRootHash,
+		GasUsed:             U64(o.GasUsed),
+		Success:             o.Success,
+		VmStatus:            o.VmStatus,
+		Changes:             o.Changes,
+		Timestamp:           U64(o.Timestamp),
+		Type:                string(TransactionVariantStateCheckpoint),
+	}
+	if o.StateCheckpointHash != "" {
+		data.StateCheckpointHash = &o.StateCheckpointHash
+	}
+	return json.Marshal(data)
 }
 
 // ValidatorTransaction is a transaction that is metadata about a block.  It's additional information from [BlockMetadataTransaction]

@@ -39,6 +39,7 @@ type Event struct {
 	Guid           *GUID          // GUID is the unique identifier of the event, only present in V1 events
 	SequenceNumber uint64         // SequenceNumber is the sequence number of the event, only present in V1 events
 	Data           map[string]any // Data is the event data, a map of field name to value, this should match it's on-chain struct representation
+	RawData        json.RawMessage
 }
 
 //region Event JSON
@@ -46,10 +47,10 @@ type Event struct {
 // UnmarshalJSON deserializes a JSON data blob into an Event
 func (o *Event) UnmarshalJSON(b []byte) error {
 	type inner struct {
-		Type           string         `json:"type"`
-		Guid           *GUID          `json:"guid"`
-		SequenceNumber U64            `json:"sequence_number"`
-		Data           map[string]any `json:"data"`
+		Type           string          `json:"type"`
+		Guid           *GUID           `json:"guid"`
+		SequenceNumber U64             `json:"sequence_number"`
+		RawData        json.RawMessage `json:"data"`
 	}
 	data := &inner{}
 	err := json.Unmarshal(b, &data)
@@ -59,8 +60,26 @@ func (o *Event) UnmarshalJSON(b []byte) error {
 	o.Type = data.Type
 	o.Guid = data.Guid
 	o.SequenceNumber = data.SequenceNumber.ToUint64()
-	o.Data = data.Data
+	o.RawData = data.RawData
+	// it's possible that the data is a map[string]any or array
+	_ = json.Unmarshal(data.RawData, &o.Data)
 	return nil
+}
+
+func (o *Event) MarshalJSON() ([]byte, error) {
+	type inner struct {
+		Type           string          `json:"type"`
+		Guid           *GUID           `json:"guid"`
+		SequenceNumber U64             `json:"sequence_number"`
+		RawData        json.RawMessage `json:"data"`
+	}
+	data := &inner{
+		Type:           o.Type,
+		Guid:           o.Guid,
+		SequenceNumber: U64(o.SequenceNumber),
+		RawData:        o.RawData,
+	}
+	return json.Marshal(data)
 }
 
 //endregion

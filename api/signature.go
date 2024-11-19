@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/aptos-labs/aptos-go-sdk/crypto"
 	"github.com/aptos-labs/aptos-go-sdk/internal/types"
+	"github.com/aptos-labs/aptos-go-sdk/internal/util"
 )
 
 // SignatureVariant is the JSON representation of the signature types
@@ -56,6 +57,33 @@ func (o *Signature) UnmarshalJSON(b []byte) error {
 	return json.Unmarshal(b, o.Inner)
 }
 
+func (o *Signature) MarshalJSON() ([]byte, error) {
+	switch o.Type {
+	case SignatureVariantEd25519:
+		inner := o.Inner.(*Ed25519Signature)
+		return json.Marshal(inner)
+	case SignatureVariantMultiAgent:
+		return json.Marshal(struct {
+			Type string `json:"type"`
+			*MultiAgentSignature
+		}{string(o.Type), o.Inner.(*MultiAgentSignature)})
+	case SignatureVariantFeePayer:
+		return json.Marshal(struct {
+			Type string `json:"type"`
+			*FeePayerSignature
+		}{string(o.Type), o.Inner.(*FeePayerSignature)})
+	case SignatureVariantSingleSender:
+		return json.Marshal(o.Inner.(*SingleSenderSignature))
+	case SignatureVariantMultiEd25519:
+		return json.Marshal(struct {
+			Type string `json:"type"`
+			*MultiEd25519Signature
+		}{string(o.Type), o.Inner.(*MultiEd25519Signature)})
+	default:
+		return json.Marshal(o.Inner.(*UnknownSignature).Payload)
+	}
+}
+
 // SignatureImpl is an interface for all signatures in their JSON formats
 type SignatureImpl interface{}
 
@@ -90,6 +118,18 @@ func (o *Ed25519Signature) UnmarshalJSON(b []byte) error {
 	}
 	o.Sig = &crypto.Ed25519Signature{}
 	return o.Sig.FromBytes(data.Signature)
+}
+
+func (o *Ed25519Signature) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Type      string `json:"type"`
+		PublicKey string `json:"public_key"`
+		Signature string `json:"signature"`
+	}{
+		Type:      string(SignatureVariantEd25519),
+		PublicKey: util.BytesToHex(o.PubKey.Bytes()),
+		Signature: util.BytesToHex(o.Sig.Bytes()),
+	})
 }
 
 // SingleSenderSignature is a map of the possible keys, the API needs an update to describe the type of key

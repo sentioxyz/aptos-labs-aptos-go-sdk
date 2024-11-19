@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/aptos-labs/aptos-go-sdk/internal/types"
 	"github.com/aptos-labs/aptos-go-sdk/internal/util"
 )
@@ -31,6 +32,16 @@ func (o *GUID) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+func (o *GUID) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&struct {
+		CreationNumber U64                   `json:"creation_number"`
+		AccountAddress *types.AccountAddress `json:"account_address"`
+	}{
+		CreationNumber: U64(o.CreationNumber),
+		AccountAddress: o.AccountAddress,
+	})
+}
+
 // U64 is a type for handling JSON string representations of the uint64
 type U64 uint64
 
@@ -47,6 +58,11 @@ func (u *U64) UnmarshalJSON(b []byte) error {
 	}
 	*u = U64(uv)
 	return nil
+}
+
+// MarshalJSON serializes a [U64] into a JSON data blob
+func (u U64) MarshalJSON() ([]byte, error) {
+	return json.Marshal(fmt.Sprintf("%d", u.ToUint64()))
 }
 
 // ToUint64 converts a [U64] to an uint64
@@ -76,6 +92,10 @@ func (u *HexBytes) UnmarshalJSON(b []byte) error {
 	}
 	*u = bytes
 	return nil
+}
+
+func (u *HexBytes) MarshalJSON() ([]byte, error) {
+	return json.Marshal(util.BytesToHex(*u))
 }
 
 // Hash is a representation of a hash as Hex in JSON

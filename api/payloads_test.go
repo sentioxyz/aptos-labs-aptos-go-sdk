@@ -31,6 +31,11 @@ func TestPayload_EntryFunction(t *testing.T) {
 	assert.Len(t, payload.TypeArguments, 1)
 	assert.Equal(t, "0x4::token::Token", payload.TypeArguments[0])
 	assert.Len(t, payload.Arguments, 2)
+
+	// Test marshal
+	marshaled, err := json.Marshal(data)
+	assert.NoError(t, err)
+	assert.JSONEq(t, testJson, string(marshaled))
 }
 
 func TestPayload_Script(t *testing.T) {
@@ -68,11 +73,16 @@ func TestPayload_Script(t *testing.T) {
 	assert.Equal(t, "main", payload.Code.Abi.Name)
 	assert.Len(t, payload.TypeArguments, 0)
 	assert.Len(t, payload.Arguments, 2)
+
+	// Test marshal
+	marshaled, err := json.Marshal(data)
+	assert.NoError(t, err)
+	assert.JSONEq(t, testJson, string(marshaled))
 }
 
 func TestPayload_Multisig(t *testing.T) {
 	testJson := `{
-  "payload": {
+  "transaction_payload": {
       "function": "0x1::object::transfer",
       "type_arguments": [
         "0x4::token::Token"
@@ -94,6 +104,11 @@ func TestPayload_Multisig(t *testing.T) {
 	assert.Equal(t, data.Type, TransactionPayloadVariantMultisig)
 	payload := data.Inner.(*TransactionPayloadMultisig)
 	assert.Equal(t, types.AccountOne, *payload.MultisigAddress)
+
+	// Test marshal
+	marshaled, err := json.Marshal(data)
+	assert.NoError(t, err)
+	assert.JSONEq(t, testJson, string(marshaled))
 }
 
 func TestPayload_ModuleBundle(t *testing.T) {
@@ -104,6 +119,11 @@ func TestPayload_ModuleBundle(t *testing.T) {
 	err := json.Unmarshal([]byte(testJson), &data)
 	assert.NoError(t, err)
 	assert.Equal(t, data.Type, TransactionPayloadVariantModuleBundle)
+
+	// Test marshal
+	marshaled, err := json.Marshal(data)
+	assert.NoError(t, err)
+	assert.JSONEq(t, testJson, string(marshaled))
 }
 
 func TestPayload_Unknown(t *testing.T) {
@@ -119,4 +139,9 @@ func TestPayload_Unknown(t *testing.T) {
 
 	assert.Equal(t, payload.Type, "new_payload")
 	assert.Equal(t, payload.Payload["something"].(bool), true)
+
+	// Test marshal
+	marshaled, err := json.Marshal(data)
+	assert.NoError(t, err)
+	assert.JSONEq(t, testJson, string(marshaled))
 }

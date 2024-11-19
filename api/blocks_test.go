@@ -162,4 +162,9 @@ func TestBlockWithTransactions(t *testing.T) {
 	assert.Equal(t, uint64(2), data.LastVersion)
 	assert.NotEmpty(t, data.Transactions)
 	assert.Equal(t, uint64(2), data.Transactions[1].Version())
+
+	// Test marshalling
+	marshalled, err := json.Marshal(data)
+	assert.NoError(t, err)
+	assert.JSONEq(t, testJson, string(marshalled))
 }
