@@ -331,7 +331,6 @@ type UserTransaction struct {
 	ExpirationTimestampSecs uint64                // ExpirationTimestampSecs of the transaction, this is the Unix timestamp in seconds when the transaction expires.
 	Payload                 *TransactionPayload   // Payload of the transaction, this is the actual transaction data.
 	Signature               *Signature            // Signature is the AccountAuthenticator of the sender.
-	RawSignature            json.RawMessage       // SignatureRaw is the raw JSON of the signature.
 	Timestamp               uint64                // Timestamp is the Unix timestamp in microseconds when the block of the transaction was committed.
 	StateCheckpointHash     Hash                  // StateCheckpointHash of the transaction. Optional, and will be "" if not set.
 }
@@ -543,7 +542,6 @@ type GenesisTransaction struct {
 	Changes             []*WriteSetChange   // Changes to the ledger from the transaction, should never be empty.
 	Events              []*Event            // Events emitted by the transaction, may be empty.
 	Payload             *TransactionPayload // Payload of the transaction, this is the actual transaction data.
-	RawPayload          json.RawMessage     // PayloadRaw is the raw JSON of the payload.
 	StateCheckpointHash Hash                // StateCheckpointHash of the transaction. Optional, and will be "" if not set.
 }
 
@@ -575,7 +573,6 @@ func (o *GenesisTransaction) UnmarshalJSON(b []byte) error {
 		VmStatus            string            `json:"vm_status"`
 		Changes             []*WriteSetChange `json:"changes"`
 		Events              []*Event          `json:"events"`
-		RawPayload          json.RawMessage   `json:"payload"`
 		StateCheckpointHash Hash              `json:"state_checkpoint_hash"` // Optional
 	}
 	data := &inner{}
@@ -593,14 +590,6 @@ func (o *GenesisTransaction) UnmarshalJSON(b []byte) error {
 	o.VmStatus = data.VmStatus
 	o.Changes = data.Changes
 	o.Events = data.Events
-	if len(data.RawPayload) > 0 {
-		o.RawPayload = data.RawPayload
-		o.Payload = &TransactionPayload{}
-		err = json.Unmarshal(data.RawPayload, o.Payload)
-		if err != nil {
-			return err
-		}
-	}
 
 	o.StateCheckpointHash = data.StateCheckpointHash
 	return nil
@@ -620,7 +609,6 @@ func (o *GenesisTransaction) MarshalJSON() ([]byte, error) {
 		VmStatus            string            `json:"vm_status"`
 		Changes             []*WriteSetChange `json:"changes"`
 		Events              []*Event          `json:"events"`
-		RawPayload          json.RawMessage   `json:"payload"`
 		StateCheckpointHash *string           `json:"state_checkpoint_hash"`
 	}{
 		Type:                string(TransactionVariantGenesis),
@@ -634,7 +622,6 @@ func (o *GenesisTransaction) MarshalJSON() ([]byte, error) {
 		VmStatus:            o.VmStatus,
 		Changes:             o.Changes,
 		Events:              o.Events,
-		RawPayload:          o.RawPayload,
 	}
 	if o.StateCheckpointHash != "" {
 		data.StateCheckpointHash = &o.StateCheckpointHash
