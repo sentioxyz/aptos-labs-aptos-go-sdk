@@ -67,3 +67,37 @@ func TestEvent_V2(t *testing.T) {
 	assert.NoError(t, err)
 	assert.JSONEq(t, testJson, string(b))
 }
+
+func TestUnMarshalU64(t *testing.T) {
+	testJson := `	{
+		"type": "0x1::fungible_asset::Withdraw",
+		"guid": {
+            "account_address": "0x0",
+			"creation_number": "0"
+		},
+		"sequence_number": 1234,
+		"data": {
+			"store": "0x1234123412341234123412341234123412341234123412341234123412341234",
+			"amount": "1000"
+		}
+	}`
+	data := &Event{}
+	err := json.Unmarshal([]byte(testJson), &data)
+	assert.NoError(t, err)
+
+	testJson2 := `	{
+		"type": "0x1::fungible_asset::Withdraw",
+		"guid": {
+            "account_address": "0x0",
+			"creation_number": "0"
+		},
+		"sequence_number": "1234",
+		"data": {
+			"store": "0x1234123412341234123412341234123412341234123412341234123412341234",
+			"amount": "1000"
+		}
+	}`
+	data = &Event{}
+	err = json.Unmarshal([]byte(testJson2), &data)
+	assert.NoError(t, err)
+}

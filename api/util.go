@@ -48,10 +48,16 @@ type U64 uint64
 // UnmarshalJSON deserializes a JSON data blob into a [U64]
 func (u *U64) UnmarshalJSON(b []byte) error {
 	var str string
-	err := json.Unmarshal(b, &str)
-	if err != nil {
-		return err
+	// it's possible that the value is a number or a string
+	if b[0] == '"' && b[len(b)-1] == '"' {
+		err := json.Unmarshal(b, &str)
+		if err != nil {
+			return err
+		}
+	} else {
+		str = string(b)
 	}
+
 	uv, err := util.StrToUint64(str)
 	if err != nil {
 		return err
