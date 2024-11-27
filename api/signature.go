@@ -197,3 +197,25 @@ func (o *MultiEd25519Signature) UnmarshalJSON(b []byte) error {
 	o.Bitmap = data.Bitmap
 	return nil
 }
+
+func (o *MultiEd25519Signature) MarshalJSON() ([]byte, error) {
+	type inner struct {
+		PublicKeys []HexBytes `json:"public_keys"`
+		Signatures []HexBytes `json:"signatures"`
+		Threshold  uint8      `json:"threshold"`
+		Bitmap     HexBytes   `json:"bitmap"`
+	}
+	data := &inner{
+		PublicKeys: make([]HexBytes, len(o.PublicKeys)),
+		Signatures: make([]HexBytes, len(o.Signatures)),
+		Threshold:  o.Threshold,
+		Bitmap:     o.Bitmap,
+	}
+	for i, key := range o.PublicKeys {
+		data.PublicKeys[i] = key.Bytes()
+	}
+	for i, signature := range o.Signatures {
+		data.Signatures[i] = signature.Bytes()
+	}
+	return json.Marshal(data)
+}
