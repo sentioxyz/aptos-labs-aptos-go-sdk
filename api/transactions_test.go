@@ -645,7 +645,7 @@ func TestTransaction_BlockMetadataTransaction(t *testing.T) {
     }
   ],
   "previous_block_votes_bitvec": [
-    0
+    1,2,3,4,5
   ],
   "proposer": "0x90693588b138a37dbb37cb96c42ffb02bf48611fc9e78adeb57c8708ee3ac03e",
   "failed_proposer_indices": [1, 2],

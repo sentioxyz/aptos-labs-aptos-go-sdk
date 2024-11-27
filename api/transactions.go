@@ -721,7 +721,7 @@ func (o *BlockMetadataTransaction) MarshalJSON() ([]byte, error) {
 		Id                       string                `json:"id"`
 		Epoch                    U64                   `json:"epoch"`
 		Round                    U64                   `json:"round"`
-		PreviousBlockVotesBitvec []int8                `json:"previous_block_votes_bitvec"` // TODO: this had to be float64 earlier
+		PreviousBlockVotesBitvec []byte                `json:"previous_block_votes_bitvec"` // TODO: this had to be float64 earlier
 		Proposer                 *types.AccountAddress `json:"proposer"`
 		FailedProposerIndices    []uint32              `json:"failed_proposer_indices"` // TODO: verify
 		Version                  U64                   `json:"version"`
@@ -739,29 +739,27 @@ func (o *BlockMetadataTransaction) MarshalJSON() ([]byte, error) {
 		Type                     string                `json:"type"`
 	}
 	data := &inner{
-		Id:                    o.Id,
-		Epoch:                 U64(o.Epoch),
-		Round:                 U64(o.Round),
-		Proposer:              o.Proposer,
-		FailedProposerIndices: o.FailedProposerIndices,
-		Version:               U64(o.Version),
-		Hash:                  o.Hash,
-		AccumulatorRootHash:   o.AccumulatorRootHash,
-		StateChangeHash:       o.StateChangeHash,
-		EventRootHash:         o.EventRootHash,
-		GasUsed:               U64(o.GasUsed),
-		Success:               o.Success,
-		VmStatus:              o.VmStatus,
-		Changes:               o.Changes,
-		Events:                o.Events,
-		Timestamp:             U64(o.Timestamp),
-		Type:                  string(TransactionVariantBlockMetadata),
+		Id:                       o.Id,
+		Epoch:                    U64(o.Epoch),
+		Round:                    U64(o.Round),
+		Proposer:                 o.Proposer,
+		PreviousBlockVotesBitvec: o.PreviousBlockVotesBitvec,
+		FailedProposerIndices:    o.FailedProposerIndices,
+		Version:                  U64(o.Version),
+		Hash:                     o.Hash,
+		AccumulatorRootHash:      o.AccumulatorRootHash,
+		StateChangeHash:          o.StateChangeHash,
+		EventRootHash:            o.EventRootHash,
+		GasUsed:                  U64(o.GasUsed),
+		Success:                  o.Success,
+		VmStatus:                 o.VmStatus,
+		Changes:                  o.Changes,
+		Events:                   o.Events,
+		Timestamp:                U64(o.Timestamp),
+		Type:                     string(TransactionVariantBlockMetadata),
 	}
 	if o.StateCheckpointHash != "" {
 		data.StateCheckpointHash = &o.StateCheckpointHash
-	}
-	for _, b := range o.PreviousBlockVotesBitvec {
-		data.PreviousBlockVotesBitvec = append(data.PreviousBlockVotesBitvec, int8(b))
 	}
 	return json.Marshal(data)
 }
