@@ -1034,8 +1034,42 @@ func (o *ValidatorTransaction) UnmarshalJSON(b []byte) error {
 	o.Events = data.Events
 	o.Timestamp = data.Timestamp.ToUint64()
 	o.StateCheckpointHash = data.StateCheckpointHash
-
 	return nil
+}
+
+func (o *ValidatorTransaction) MarshalJSON() ([]byte, error) {
+	data := struct {
+		Type                string            `json:"type"`
+		Version             U64               `json:"version"`
+		Hash                Hash              `json:"hash"`
+		AccumulatorRootHash Hash              `json:"accumulator_root_hash"`
+		StateChangeHash     Hash              `json:"state_change_hash"`
+		EventRootHash       Hash              `json:"event_root_hash"`
+		GasUsed             U64               `json:"gas_used"`
+		Success             bool              `json:"success"`
+		VmStatus            string            `json:"vm_status"`
+		Changes             []*WriteSetChange `json:"changes"`
+		Events              []*Event          `json:"events"`
+		Timestamp           U64               `json:"timestamp"`
+		StateCheckpointHash *Hash             `json:"state_checkpoint_hash"`
+	}{
+		Type:                string(TransactionVariantValidator),
+		Version:             U64(o.Version),
+		Hash:                o.Hash,
+		AccumulatorRootHash: o.AccumulatorRootHash,
+		StateChangeHash:     o.StateChangeHash,
+		EventRootHash:       o.EventRootHash,
+		GasUsed:             U64(o.GasUsed),
+		Success:             o.Success,
+		VmStatus:            o.VmStatus,
+		Changes:             o.Changes,
+		Events:              o.Events,
+		Timestamp:           U64(o.Timestamp),
+	}
+	if o.StateCheckpointHash != "" {
+		data.StateCheckpointHash = &o.StateCheckpointHash
+	}
+	return json.Marshal(data)
 }
 
 // SubmitTransactionResponse is the response from submitting a transaction to the blockchain, it is the same

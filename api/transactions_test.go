@@ -813,6 +813,33 @@ func TestTransaction_BlockEpilogueTransaction(t *testing.T) {
 	assert.JSONEq(t, testJson, string(jsonData))
 }
 
+func TestTransaction_ValidatorTransaction(t *testing.T) {
+	testJson := `{
+  "version": "2",
+  "hash": "0x1f19608413baaa8f39b670fbf001d17443ba7b975e0c22733bf742cea99fbdaf",
+  "state_change_hash": "0xafb6e14fe47d850fd0a7395bcfb997ffacf4715e0f895cc162c218e4a7564bc6",
+  "event_root_hash": "0x414343554d554c41544f525f504c414345484f4c4445525f4841534800000000",
+  "state_checkpoint_hash": "0x986343cd66e79d3f8b52fcd65df05da9801f0894ac4b5c27d079a8bdadbaa432",
+  "gas_used": "0",
+  "success": true,
+  "vm_status": "Executed successfully",
+  "accumulator_root_hash": "0x957c214e74b1aded27be7fd78b50c96fc0bfc25a70ad1555a08968a8fdc05cb1",
+  "events": [],
+  "changes": [],
+  "timestamp": "1719520421743738",
+  "type": "validator_transaction"
+}`
+	data := &Transaction{}
+	err := json.Unmarshal([]byte(testJson), &data)
+	assert.NoError(t, err)
+	assert.Equal(t, TransactionVariantValidator, data.Type)
+
+	// Check MarshalJSON
+	jsonData, err := json.Marshal(data)
+	assert.NoError(t, err)
+	assert.JSONEq(t, testJson, string(jsonData))
+}
+
 func TestTransaction_UnknownTransaction(t *testing.T) {
 	testJson := `{
   "version": "2",
