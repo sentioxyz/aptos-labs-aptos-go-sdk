@@ -1,10 +1,12 @@
 package api
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/aptos-labs/aptos-go-sdk/internal/types"
 	"github.com/aptos-labs/aptos-go-sdk/internal/util"
+	"strings"
 )
 
 // GUID describes a GUID associated with things like V1 events
@@ -92,16 +94,35 @@ func (u *HexBytes) UnmarshalJSON(b []byte) error {
 	if err != nil {
 		return err
 	}
-	bytes, err := util.ParseHex(str)
-	if err != nil {
-		return err
+	var bytes []byte
+	if strings.HasPrefix(str, "0x") {
+		bytes, err = util.ParseHex(str)
+		if err != nil {
+			return err
+		}
+	} else if strings.HasSuffix(str, "=") {
+		bytes, err = base64.StdEncoding.DecodeString(str)
+		if err != nil {
+			return err
+		}
+	} else {
+		// try hex first
+		bytes, err = util.ParseHex(str)
+		if err != nil {
+			// then base64
+			bytes, err = base64.StdEncoding.DecodeString(str)
+			if err != nil {
+				return err
+			}
+		}
 	}
+
 	*u = bytes
 	return nil
 }
 
-func (u *HexBytes) MarshalJSON() ([]byte, error) {
-	return json.Marshal(util.BytesToHex(*u))
+func (u HexBytes) MarshalJSON() ([]byte, error) {
+	return json.Marshal(util.BytesToHex(u))
 }
 
 // Hash is a representation of a hash as Hex in JSON
