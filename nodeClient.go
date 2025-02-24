@@ -157,6 +157,37 @@ func (rc *NodeClient) AccountResources(address AccountAddress, ledgerVersion ...
 	return resources, err
 }
 
+// AccountResourcesByPages fetches resources for an account into a JSON-like map[string]any in AccountResourceInfo.Data
+// Since only one page will be returned at a time, you need to specify the maximum number of rows on a page.
+// All pages will be automatically traversed and the results will be merged.
+func (rc *NodeClient) AccountResourcesByPages(
+	address AccountAddress,
+	ledgerVersion uint64,
+	pageSize uint64,
+) (resources []AccountResourceInfo, err error) {
+	var cursor string
+	params := url.Values{}
+	params.Set("ledger_version", strconv.FormatUint(ledgerVersion, 10))
+	if pageSize > 0 {
+		params.Set("limit", strconv.FormatUint(pageSize, 10))
+	}
+	au := rc.baseUrl.JoinPath("accounts", address.String(), "resources")
+	for {
+		if cursor != "" {
+			params.Set("start", cursor)
+		}
+		au.RawQuery = params.Encode()
+		page, response, pageErr := GetWithResp[[]AccountResourceInfo](rc, au.String())
+		if pageErr != nil {
+			return nil, fmt.Errorf("get resources api err: %w", pageErr)
+		}
+		resources = append(resources, page...)
+		if cursor = response.Header.Get("X-Aptos-Cursor"); cursor == "" {
+			return resources, nil
+		}
+	}
+}
+
 // AccountResourcesBCS fetches account resources as raw Move struct BCS blobs in AccountResourceRecord.Data []byte
 // Optionally, a ledgerVersion can be given to get the account state at a specific ledger version
 func (rc *NodeClient) AccountResourcesBCS(address AccountAddress, ledgerVersion ...uint64) (resources []AccountResourceRecord, err error) {
@@ -1021,9 +1052,15 @@ func (rc *NodeClient) NodeHealthCheck(durationSecs ...uint64) (api.HealthCheckRe
 
 // Get makes a GET request to the endpoint and parses the response into the given type with JSON
 func Get[T any](rc *NodeClient, getUrl string) (out T, err error) {
+	out, _, err = GetWithResp[T](rc, getUrl)
+	return
+}
+
+// GetWithResp makes a GET request to the endpoint and parses the response into the given type with JSON
+func GetWithResp[T any](rc *NodeClient, getUrl string) (out T, response *http.Response, err error) {
 	req, err := http.NewRequest("GET", getUrl, nil)
 	if err != nil {
-		return out, err
+		return out, nil, err
 	}
 	req.Header.Set(ClientHeader, ClientHeaderValue)
 
@@ -1032,26 +1069,26 @@ func Get[T any](rc *NodeClient, getUrl string) (out T, err error) {
 		req.Header.Set(key, value)
 	}
 
-	response, err := rc.client.Do(req)
+	response, err = rc.client.Do(req)
 	if err != nil {
 		err = fmt.Errorf("GET %s, %w", getUrl, err)
-		return out, err
+		return out, response, err
 	}
 
 	if response.StatusCode >= 400 {
 		err = NewHttpError(response)
-		return out, err
+		return out, response, err
 	}
 	blob, err := io.ReadAll(response.Body)
 	if err != nil {
-		return out, fmt.Errorf("error getting response data, %w", err)
+		return out, response, fmt.Errorf("error getting response data, %w", err)
 	}
 	_ = response.Body.Close()
 	err = json.Unmarshal(blob, &out)
 	if err != nil {
-		return out, err
+		return out, response, err
 	}
-	return out, nil
+	return out, response, nil
 }
 
 // GetBCS makes a GET request to the endpoint and parses the response into the given type with BCS
